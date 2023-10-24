@@ -30,12 +30,15 @@ def validate(cfg):
                                     Optional('notsplitbysys', default = None):  [str],
                                     Optional('maxjobsperchunk', default = None):    int,
                                     Optional('splitby', default = None):    str,
-                                    Optional('removefromsuff', default = None): str,
+                                    Optional('removefromsuff', default = [None]): [str],
                                     Optional('onlykeep', default = None): [str],
                                     Optional('bootstrap', default = 0): int,
                                     Optional('bootstrapnominalconfig', default = None): str,
                                     Optional('bootstrapparam', default = None): str,
                                     Optional('injectfromcfg', default = None): str,
+                                    Optional('likelihoodx', default = [0,0]): [int,int],
+                                    Optional('likelihoody', default = [0,0]): [int,int],
+                                    Optional('usecache', default = False): bool,
                                 }
                             })
 

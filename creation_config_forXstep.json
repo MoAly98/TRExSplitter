@@ -1,0 +1,18 @@
+
+{
+    "Systematics": ["**"],
+    "Samples":     ["**"],
+    "Regions":     ["**"],
+    "General":{
+        "TRExConfig":   "/eos/user/m/maly/thbb/thbb-fit/tHbb_v34_v3_FullSyst/configs/HistosAndAsimovConfigs/tH_v34_v3_FullSyst_Rect_AltBDT_with4v5FS_withPtHard.config",
+        "outdir":   "./Jobs_forXstep/",
+        "OtherSysts":   false,
+        "OtherSamples": false,
+        "likelihoodx": [0,5],
+        "likelihoody": [0,2],
+        "usecache":    true,
+        "notsplitbysys":   ["Fakes*"],
+        "RemoveFromSuff": ["SYSTEMATIC", "SAMPLE", "REGION"]
+    }
+}
+

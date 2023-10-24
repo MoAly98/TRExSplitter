@@ -52,13 +52,13 @@
                 "ATLAS_JES1_EffectiveNP_Statistical5",
                 "ATLAS_JES1_EffectiveNP_Statistical6"],
     "Samples":   ["Data*",  "singletop*", "Wjets", "Zjets", "VV", "ttW*", "ttZ*","Fakes*","ttH*","ttb*","ttc*","ttlight*"],
-    "Regions":  ["SR_ALL_bdt_tH_alt", "CR_ttb_ALL_bdt_ttb_alt"],
+    "Regions":  ["**"],
     "General":{
-        "TRExConfig":   "/path/to/my/config/myconfig.config",
-        "outdir":   "./NStepJobs_forNstep_config/",
+        "TRExConfig":   "/eos/user/m/maly/thbb/thbb-fit/tHbb_v34_v3_FullSyst/configs/HistosAndAsimovConfigs/tH_v34_v3_FullSyst_Rect_AltBDT_forNstep.config",
+        "outdir":   "./Jobs_forNstep/",
         "OtherSysts":   true,
         "OtherSamples": true,
-        "RemoveFromSuff": "REGION",
+        "RemoveFromSuff": ["REGION"],
         "notsplitbysys":   ["Fakes*"]
     }
 }

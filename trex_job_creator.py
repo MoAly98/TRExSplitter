@@ -95,7 +95,7 @@ def main():
         if nom_histfolder == '':    logger.error("No histogram folder found in BootstrapNominalConfig")
         if not os.path.exists(nom_histfolder): logger.error(f"BootstrapNominalConfig histogram folder {nom_histfolder} does not exist")
 
-        bootstrap = Bootstrapper(n_bootstraps, nom_histfolder, nom_jobname, options["general"]["bootstrapparam"], step)
+        bootstrap = Bootstrapper(n_bootstraps, nom_histfolder, nom_jobname, options["general"]["bootstrapparam"], step in ['n','b'])
 
     # ====== Prepare for injection of fit results
     injectedfitcfg = options["general"]["injectfromcfg"]
@@ -111,7 +111,7 @@ def main():
         injectedfitfile = None
 
     # ====== Make the list of jobs to run
-    jobs, exp_files, regions = make_jobs(cfg_samples,cfg_regions, cfg_systematics, data, jobname, options, injectedfitfile, bootstrap, cfg_normfactors, run_ranking = step == 'r')
+    jobs, exp_files, regions = make_jobs(cfg_samples,cfg_regions, cfg_systematics, data, jobname, options, injectedfitfile, bootstrap, cfg_normfactors, run_ranking = step == 'r', run_likelihood = step == 'x')
 
     numjobs = len(jobs) #n_bootstraps*len(jobs) if n_bootstraps > 0 else len(jobs)
     logger.info(f"You have generated {numjobs} jobs")
@@ -164,6 +164,7 @@ def make_jobs(
     bootstrap: Bootstrapper,
     cfg_normfactors: List[str],
     run_ranking: bool = False,
+    run_likelihood: bool = False,
 ):
     '''
     Method responsible for constructing the correct trex-fitter command
@@ -267,6 +268,20 @@ def make_jobs(
     if samples_to_split_by_sys is None:
         samples_to_split_by_sys = [s.replace("*",".*") for s in samples if s not in sample_not_split_by_sys] + ['othersamples'] if othersamples else [s.replace("*",".*") for s in samples if s not in sample_not_split_by_sys]
 
+    # =========================================================================
+    # =================== Prepare for Likelihood Scans ============================
+    # =========================================================================
+    if run_likelihood:
+        lhscanx_range = options["general"]["likelihoodx"]
+        lhscany_range = options["general"]["likelihoody"]
+        no_lhscany = False
+        no_lhscanx = False
+        if lhscanx_range[0] == 0 and lhscanx_range[1] == 0:
+            no_lhscanx = True
+            lhscanx_range = [0,1]
+        if lhscany_range[0] == 0 and lhscany_range[1] == 0:
+            no_lhscany = True
+            lhscany_range = [0,1]
 
     # =========================================================================
     # ================== Start processing the jobs!  ===========================
@@ -326,15 +341,32 @@ def make_jobs(
                 if injectedfitfile is not None:
                     injectedfitfile = injectedfitfile.replace('.txt', f'_Bootstrap__{bs_idx}.txt')
 
-                if bootstrap.step not in ['n','b']:
+                if bootstrap.need_suff:
                     # Check if we need a botostrap idx in suffix based on which step is being ran (need it in not n)
                     suf = get_sufffix(region, sample, systematic ,removefromsuff, bs_idx=bs_idx)
 
-                job = get_jobline(sample, region, systematic, exclude_str, excl_samp, excl_syst, suf, bs_idx=bs_idx, injectedfitfile=injectedfitfile, runranking=run_ranking)
-                jobs.append(job)
+                for lhx in np.arange(*lhscanx_range, 1):
+                    for lhy in np.arange(*lhscany_range, 1):
+                        if no_lhscany:  lhy = None
+                        if no_lhscanx:  lhx = None
+
+                        job = get_jobline(sample, region, systematic, exclude_str, excl_samp, excl_syst, suf, bs_idx=bs_idx,
+                                        injectedfitfile=injectedfitfile, runranking=run_ranking, runlikelihood=run_likelihood,
+                                        lhscanx=lhx, lhscany=lhy, usecache=options["general"]["usecache"])
+
+                        jobs.append(job)
         else:
-            job = get_jobline(sample, region, systematic, exclude_str, excl_samp, excl_syst, suf, bs_idx=None, injectedfitfile=injectedfitfile,runranking=run_ranking)
-            jobs.append(job)
+            for lhx in np.arange(*lhscanx_range, 1):
+                for lhy in np.arange(*lhscany_range, 1):
+                    if no_lhscany:  lhy = None
+                    if no_lhscanx:  lhx = None
+
+                    job = get_jobline(sample, region, systematic, exclude_str, excl_samp, excl_syst, suf, bs_idx=None,
+                                    injectedfitfile=injectedfitfile, runranking=run_ranking, runlikelihood=run_likelihood,
+                                    lhscanx=lhx, lhscany=lhy, usecache=options["general"]["usecache"])
+
+            #job = get_jobline(sample, region, systematic, exclude_str, excl_samp, excl_syst, suf, bs_idx=None, injectedfitfile=injectedfitfile,runranking=run_ranking, runlikelihood=run_likelihood)
+                    jobs.append(job)
 
         expected_files = get_histo_name(job, options["general"]["trexconfig"], cfg_regions, cfg_samples, jobname, excl_samp, exclude)
         all_exp_files.append(expected_files)
@@ -398,6 +430,10 @@ def get_jobline(
     suf: str,
     bs_idx: int = None, injectedfitfile: str = None,
     runranking: bool = False,
+    runlikelihood: bool = False,
+    lhscanx: int = None,
+    lhscany: int = None,
+    usecache: bool = False,
 ) -> str:
     '''
     Method that constructs the trex-fitter command object specification
@@ -418,16 +454,17 @@ def get_jobline(
         The object specification part of the trex-fitter job
     '''
 
-    job = f'!REGION!_!SAMPLE!_!SYSTEMATIC!_!EXCLUDE!_!BOOTSTRAP!_!INJECTION!_!SUFFIX!'
+    job = f'!REGION!_!SAMPLE!_!SYSTEMATIC!_!EXCLUDE!_!BOOTSTRAP!_!INJECTION!_!LHSCANX!_!LHSCANY!_!SUFFIX!'
 
     # Remove parts of the templates based on settings
     if sample == '**' or sample == '':  job = job.replace('!SAMPLE!','')
     if region == '**' or sample == '':  job = job.replace('!REGION!','')
-    if systematic == '**' or systematic == '':                job = job.replace('!SYSTEMATIC!','')
-    if excluded == '':                                        job = job.replace('!EXCLUDE!','')
-    if bs_idx is None:                                        job = job.replace('!BOOTSTRAP!','')
-    if injectedfitfile is None:                               job = job.replace('!INJECTION!','')
-    if not runranking:                                        job = job.replace('!RANKING!','')
+    if systematic == '**' or systematic == '':    job = job.replace('!SYSTEMATIC!','')
+    if excluded == '':                            job = job.replace('!EXCLUDE!','')
+    if bs_idx is None:                            job = job.replace('!BOOTSTRAP!','')
+    if injectedfitfile is None:                   job = job.replace('!INJECTION!','')
+    if not runranking:                            job = job.replace('!RANKING!','')
+    if not runlikelihood:                         job = job.replace('!LHSCANX!','').replace('!LHSCANY!','')
     if sample == 'othersamples':        job = job.replace('!SAMPLE!','!EXCLUDESAMPLES!')
     if systematic == 'othersysts':      job = job.replace('!SYSTEMATIC!','!EXCLUDESYSTEMATIC!')
 
@@ -460,6 +497,8 @@ def get_jobline(
     job_syst = f"Systematics={systematic}" if systematic != 'othersamples' else ''
     job_inj =  f"NPValuesFromFitResults={injectedfitfile}"
     job_boot = f"BootstrapIdx={bs_idx}"
+    job_lhscanx = f"LHscanStep={lhscanx}"
+    job_lhscany = f"LHscanStepY={lhscany}"
 
     # If any part of the job template is not there
     # replace will not do anything
@@ -469,8 +508,17 @@ def get_jobline(
     job = job.replace('!SUFFIX!', suf)
     job = job.replace('!BOOTSTRAP!', job_boot)
     job = job.replace('!INJECTION!', job_inj)
-    if runranking:  job = job.replace('Systematics=', 'Ranking=')
+    if lhscanx is not None:
+        job = job.replace('!LHSCANX!', job_lhscanx)
+    else:
+        job = job.replace('!LHSCANX!', '')
 
+    if lhscany is not None:
+        job = job.replace('!LHSCANY!', job_lhscany)
+    else:
+        job = job.replace('!LHSCANY!', '')
+    if runranking:  job = job.replace('Systematics=', 'Ranking=')
+    if usecache:    job += 'UseCache=True'
     # Cleanup of ":"
     compiled = re.compile(r':{2,}')
     job = compiled.sub(':', job)

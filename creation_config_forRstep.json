@@ -1,0 +1,15 @@
+
+{
+    "Systematics": ["*"],
+    "Samples":     ["**"],
+    "Regions":     ["**"],
+    "General":{
+        "TRExConfig":   "/eos/user/m/maly/thbb/thbb-fit/tHbb_v34_v3_FullSyst/configs/HistosAndAsimovConfigs/tH_v34_v3_FullSyst_Rect_AltBDT_with4v5FS_withPtHard.config",
+        "outdir":   "./NStepJobs_forRstep/",
+        "OtherSysts":   false,
+        "OtherSamples": false,
+        "notsplitbysys":   ["Fakes*"],
+        "RemoveFromSuff": ["SYSTEMATIC", "SAMPLE", "REGION"]
+    }
+}
+
