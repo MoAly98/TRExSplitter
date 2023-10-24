@@ -38,12 +38,19 @@ in preparign a list of jobs for the user that they can run using their favourite
 
 To run the code, execute
 
-```
-python jobs/trex_job_creator.py -c <your_creation_config>
+```bash
+python jobs/trex_job_creator.py  <your_creation_config>
 ```
 
 where `<your_creation_config>` is a `JSON` file containing the settings that specify how you would like to split your jobs, with a lot of flexibility.
 
+The above will run the `n` step. To run a different step, use:
+
+```bash
+python jobs/trex_job_creator.py <your_creation_config> --step <MyStep>
+```
+
+To suffix your output files, you should use the `-s` option.
 
 ### The Configuration File
 
