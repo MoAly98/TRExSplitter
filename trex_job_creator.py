@@ -240,8 +240,8 @@ def make_jobs(
     # Special cases if user wants to split jobs by
     # all samples/region/systematic:
     # i.e. +1 jobs per config sample/region/systematic
-    if samples ==     ["*"]:    samples = cfg_samples
-    if regions ==     ["*"]:    regions = cfg_regions
+    if samples ==     ["*"]:    samples     = cfg_samples
+    if regions ==     ["*"]:    regions     = cfg_regions
     if systematics == ["*"]:    systematics = cfg_systs
 
     # =================== Exclusions ============================
@@ -290,6 +290,10 @@ def make_jobs(
     if othersamples and samples == ["**"]:         logger.error("Cannot have othersamples when using ** in Samples list")
     if othersamples and samples == cfg_samples:    logger.error("Cannot have othersamples when using * in Samples list")
 
+    # If user wants to split by all systematics/not split by systematics
+    # then cannot use othersysts as well
+    if othersysts and systematics == ["**"]:         logger.error("Cannot have othersamples when using ** in Systematics list")
+    if othersysts and systematics == cfg_systs:      logger.error("Cannot have othersamples when using * in Systematics list")
 
     # =========================================================================
     # ========= Prepare an hupdate file for merging by region ==================
