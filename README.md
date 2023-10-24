@@ -82,9 +82,9 @@ The following fields are needed to specify what you want to parallelise. You can
 
 | Settings| Description| Full Split | No Split  |
 |---------|------------| ---------- | ----------|
-| Regions | The list of regions to split by         | \* | \*\* |
-| Samples | The list of samples to split by         | \* | \*\* |
-| Systematics | The list of systematics to split by | \* | \*\* |
+| Regions | The list of regions to split by         | ["\*"] | ["\*\*"] |
+| Samples | The list of samples to split by         | ["\*"] | ["\*\*"] |
+| Systematics | The list of systematics to split by | ["\*"] | ["\*\*"] |
 
 The required general settings are:
 
